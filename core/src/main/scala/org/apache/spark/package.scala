@@ -67,7 +67,7 @@ package object spark {
         val props = new Properties()
         props.load(resourceStream)
         (
-          props.getProperty("version", unknownProp),
+          s"${props.getProperty("version", unknownProp)}-haizhi",
           props.getProperty("branch", unknownProp),
           props.getProperty("revision", unknownProp),
           props.getProperty("user", unknownProp),

@@ -237,7 +237,8 @@
         See https://storage-download.googleapis.com/maven-central/index.html
       -->
       <name>GCS Maven Central mirror</name>
-      <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
+      <!--<url>https://maven-central.storage-download.googleapis.com/maven2/</url>-->
+      <url>https://maven.aliyun.com/repository/public</url>
       <releases>
         <enabled>true</enabled>
       </releases>
