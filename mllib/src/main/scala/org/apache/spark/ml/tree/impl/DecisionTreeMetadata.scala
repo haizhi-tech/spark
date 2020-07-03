@@ -121,7 +121,8 @@ private[spark] object DecisionTreeMetadata extends Logging {
       case Regression => 0
     }
 
-    val maxPossibleBins = math.min(strategy.maxBins, numExamples).toInt
+    // val maxPossibleBins = math.min(strategy.maxBins, numExamples).toInt
+    val maxPossibleBins = strategy.maxBins
     if (maxPossibleBins < strategy.maxBins) {
       logWarning(s"DecisionTree reducing maxBins from ${strategy.maxBins} to $maxPossibleBins" +
         s" (= number of training instances)")

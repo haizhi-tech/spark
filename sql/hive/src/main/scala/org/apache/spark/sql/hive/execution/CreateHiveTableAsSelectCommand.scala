@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.DataWritingCommand
+import org.apache.spark.sql.types.{NullType, StringType, StructField, StructType}
 
 
 /**
@@ -71,8 +72,13 @@ case class CreateHiveTableAsSelectCommand(
       // add the relation into catalog, just in case of failure occurs while data
       // processing.
       assert(tableDesc.schema.isEmpty)
-      catalog.createTable(
-        tableDesc.copy(schema = outputColumns.toStructType), ignoreIfExists = false)
+      val newTableDesc = tableDesc.copy(schema = StructType(query.output.map { c =>
+        c.dataType match {
+          case NullType => StructField(c.name, StringType, c.nullable)
+          case _ => StructField(c.name, c.dataType, c.nullable)
+        }
+      }))
+      sparkSession.sessionState.catalog.createTable(newTableDesc, ignoreIfExists = false)
 
       try {
         // Read back the metadata of the table which was created just now.

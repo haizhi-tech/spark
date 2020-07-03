@@ -511,7 +511,8 @@ private[deploy] class Worker(
             val localRootDirs = Utils.getOrCreateLocalRootDirs(conf)
             val dirs = localRootDirs.flatMap { dir =>
               try {
-                val appDir = Utils.createDirectory(dir, namePrefix = "executor")
+                // BDP: use `appId` replace "executor" for easy recognition
+                val appDir = Utils.createDirectory(dir, namePrefix = appId)
                 Utils.chmod700(appDir)
                 Some(appDir.getAbsolutePath())
               } catch {
