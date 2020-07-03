@@ -18,6 +18,7 @@
 package org.apache.spark.memory;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Arrays;
@@ -188,6 +189,9 @@ public class TaskMemoryManager {
                 sortedConsumers.remove(currentEntry.getKey());
               }
             }
+          } catch (FileNotFoundException e) {
+            logger.error("error while calling spill() on " + c, e);
+            throw new RuntimeException(e.getMessage());
           } catch (ClosedByInterruptException e) {
             // This called by user to kill a task (e.g: speculative task).
             logger.error("error while calling spill() on " + c, e);
@@ -209,6 +213,9 @@ public class TaskMemoryManager {
               Utils.bytesToString(released), consumer);
             got += memoryManager.acquireExecutionMemory(required - got, taskAttemptId, mode);
           }
+        } catch (FileNotFoundException e) {
+          logger.error("error while calling spill() on " + consumer, e);
+          throw new RuntimeException(e.getMessage());
         } catch (ClosedByInterruptException e) {
           // This called by user to kill a task (e.g: speculative task).
           logger.error("error while calling spill() on " + consumer, e);
