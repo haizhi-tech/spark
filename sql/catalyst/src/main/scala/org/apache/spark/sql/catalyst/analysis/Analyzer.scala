@@ -2200,10 +2200,69 @@ class Analyzer(
    * put them into an inner Project and finally project them away at the outer Project.
    */
   object PullOutNondeterministic extends Rule[LogicalPlan] {
-    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUp {
+
+    /**
+     * split the expression by given logicalPlan
+     */
+    private def split(expressions: Seq[Expression], left: LogicalPlan, right: LogicalPlan) = {
+      // split the expressions to otherExpressions and restExpressions
+      // because otherExpression is not AttributeReference
+      val (otherExpressions, restExpressions) =
+      expressions.partition(_.references.size == 0)
+      val (leftEvaluateExpressions, rest) =
+        restExpressions.partition(_.references subsetOf left.outputSet)
+      val (rightEvaluateExpressions, other) =
+        rest.partition(_.references subsetOf right.outputSet)
+
+      (leftEvaluateExpressions, rightEvaluateExpressions, otherExpressions ++ other)
+    }
+
+    private def splitByPredicates(expressions: Expression): Seq[Expression] = {
+      expressions match {
+        case And(cond1, cond2) =>
+          splitByPredicates(cond1) ++ splitByPredicates(cond2)
+        case EqualTo(cond1, cond2) =>
+          splitByPredicates(cond1) ++ splitByPredicates(cond2)
+        case other => other :: Nil
+      }
+    }
+
+    private def getNondeterministicMap(expressions: Seq[Expression]):
+    Map[TreeNodeRef, NamedExpression] = {
+      expressions.filterNot(_.deterministic).flatMap { expr =>
+        val leafNondeterministic = expr.collect {
+          case n: Nondeterministic => n
+        }
+        leafNondeterministic.map { e =>
+          val ne = e match {
+            case n: NamedExpression => n
+            case _ => Alias(e, "_nondeterministic")()
+          }
+          new TreeNodeRef(e) -> ne
+        }
+      }.toMap
+    }
+
+    override def apply(plan: LogicalPlan): LogicalPlan = plan transformUp  {
       case p if !p.resolved => p // Skip unresolved nodes.
       case p: Project => p
       case f: Filter => f
+      case j: Join if j.expressions.exists(!_.deterministic) =>
+        // For now, not pull out nondeterministic from `otherExpressions`
+        // which references do not in the left child or right child
+        val (leftExpression, rightExpression, otherExpression) =
+          split(j.expressions.flatMap(splitByPredicates), j.left, j.right)
+
+        val leftNondeterministic = getNondeterministicMap(leftExpression)
+        val rightNondeterministic = getNondeterministicMap(rightExpression)
+        val nondeterministicExprs = leftNondeterministic ++ rightNondeterministic
+
+        val newJoinPlan = j.transformExpressions { case e =>
+          nondeterministicExprs.get(new TreeNodeRef(e)).map(_.toAttribute).getOrElse(e)
+        }
+        val newLeftChild = Project(j.left.output ++ leftNondeterministic.values, j.left)
+        val newRightChild = Project(j.right.output ++ rightNondeterministic.values, j.right)
+        Project(newJoinPlan.output, newJoinPlan.withNewChildren(List(newLeftChild, newRightChild)))
 
       case a: Aggregate if a.groupingExpressions.exists(!_.deterministic) =>
         val nondeterToAttr = getNondeterToAttr(a.groupingExpressions)
