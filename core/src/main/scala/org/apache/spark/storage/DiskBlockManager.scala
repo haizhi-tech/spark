@@ -17,7 +17,7 @@
 
 package org.apache.spark.storage
 
-import java.io.{File, IOException}
+import java.io.{File, FileOutputStream, IOException, OutputStreamWriter}
 import java.util.UUID
 
 import org.apache.spark.SparkConf
@@ -136,7 +136,7 @@ private[spark] class DiskBlockManager(conf: SparkConf, deleteFilesOnStop: Boolea
    * be deleted on JVM exit when using the external shuffle service.
    */
   private def createLocalDirs(conf: SparkConf): Array[File] = {
-    Utils.getConfiguredLocalDirs(conf).flatMap { rootDir =>
+    val dirs = Utils.getConfiguredLocalDirs(conf).flatMap { rootDir =>
       try {
         val localDir = Utils.createDirectory(rootDir, "blockmgr")
         logInfo(s"Created local directory at $localDir")
@@ -147,6 +147,17 @@ private[spark] class DiskBlockManager(conf: SparkConf, deleteFilesOnStop: Boolea
           None
       }
     }
+    recordDirsToFile(dirs)
+    dirs
+  }
+
+  private def recordDirsToFile(dirs: Array[File]): Unit = {
+    val f = new File("_temp_dirs")
+    f.createNewFile()
+    val writer = new OutputStreamWriter(new FileOutputStream(f), "UTF-8")
+    writer.write(dirs.map(_.getCanonicalPath).mkString(","))
+    writer.close()
+    logInfo(s"create _temp_dirs for disk block manager: ${f.getCanonicalPath}")
   }
 
   private def addShutdownHook(): AnyRef = {

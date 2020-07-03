@@ -109,6 +109,7 @@ private[deploy] class ExecutorRunner(
     } catch {
       case e: IllegalStateException => logWarning(e.getMessage(), e)
     }
+    removeExecutorTempDirs()
   }
 
   /** Stop this executor runner, including killing the process it launched */
@@ -195,6 +196,33 @@ private[deploy] class ExecutorRunner(
         logError("Error running executor", e)
         state = ExecutorState.FAILED
         killProcess(Some(e.toString))
+    } finally {
+      removeExecutorTempDirs()
     }
   }
+
+  private def removeExecutorTempDirs(): Unit = {
+    val f = new File(executorDir, "_temp_dirs")
+    if (!f.exists()) {
+      return
+    }
+
+    val input = new InputStreamReader(new FileInputStream(f), "UTF-8")
+    val reader = new BufferedReader(input)
+    val data = reader.readLine()
+    reader.close()
+    data.split(",").foreach{ dir =>
+      val localDir = new File(dir)
+      logInfo(s"remove dir: ${localDir.getCanonicalPath} in _temp_dirs: ${f.getCanonicalPath}")
+      if (localDir.isDirectory() && localDir.exists()) {
+        try {
+          Utils.deleteRecursively(localDir)
+        } catch {
+          case e: Exception =>
+            logError(s"Exception while deleting local spark dir: $localDir", e)
+        }
+      }
+    }
+  }
+
 }
