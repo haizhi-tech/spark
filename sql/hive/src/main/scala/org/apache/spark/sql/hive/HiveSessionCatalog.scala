@@ -56,6 +56,10 @@ private[sql] class HiveSessionCatalog(
       parser,
       functionResourceLoader) {
 
+  private val bdpUDFBlacklist = conf.getConfString("spark.bdp.udf.blacklist", "")
+    .replaceAll(" ", "")
+    .split(",")
+
   /**
    * Constructs a [[Expression]] based on the provided class that represents a function.
    *
@@ -129,6 +133,9 @@ private[sql] class HiveSessionCatalog(
   }
 
   private def lookupFunction0(name: FunctionIdentifier, children: Seq[Expression]): Expression = {
+    if (bdpUDFBlacklist.contains(name.funcName)) {
+      throw new AnalysisException(s"function ${name.funcName} on bdp udf blacklist")
+    }
     val database = name.database.map(formatDatabaseName)
     val funcName = name.copy(database = database)
     Try(super.lookupFunction(funcName, children)) match {
