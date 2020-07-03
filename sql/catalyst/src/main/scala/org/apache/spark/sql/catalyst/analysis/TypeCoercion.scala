@@ -142,7 +142,9 @@ object TypeCoercion {
     // See SPARK-22469 for details.
     case (n: DecimalType, s: StringType) => Some(DoubleType)
     case (s: StringType, n: DecimalType) => Some(DoubleType)
-
+    // TODO: BDP fix
+    case (StringType, r: NumericType) => Some(DoubleType)
+    case (l: NumericType, StringType) => Some(DoubleType)
     case (l: StringType, r: AtomicType) if r != StringType => Some(r)
     case (l: AtomicType, r: StringType) if l != StringType => Some(l)
     case (l, r) => None

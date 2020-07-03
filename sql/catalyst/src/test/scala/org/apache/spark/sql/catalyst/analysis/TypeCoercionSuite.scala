@@ -1476,8 +1476,11 @@ class TypeCoercionSuite extends AnalysisTest {
   test("binary comparison with string promotion") {
     val rule = TypeCoercion.PromoteStrings(conf)
     ruleTest(rule,
+      EqualTo(Literal("-0.1"), Literal(0)),
+      EqualTo(Cast(Literal("-0.1"), DoubleType), Cast(Literal(0), DoubleType)))
+    ruleTest(rule,
       GreaterThan(Literal("123"), Literal(1)),
-      GreaterThan(Cast(Literal("123"), IntegerType), Literal(1)))
+      GreaterThan(Cast(Literal("123"), DoubleType), Cast(Literal(1), DoubleType)))
     ruleTest(rule,
       LessThan(Literal(true), Literal("123")),
       LessThan(Literal(true), Cast(Literal("123"), BooleanType)))
