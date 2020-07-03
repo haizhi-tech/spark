@@ -742,9 +742,13 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
     }
 
     // Get the original table properties as defined by the user.
+    // BDP Fix: return all properties
+    /*
     table.copy(
       createVersion = version,
       properties = table.properties.filterNot { case (key, _) => key.startsWith(SPARK_SQL_PREFIX) })
+    */
+    table
   }
 
   // Reorder table schema to put partition columns at the end. Before Spark 2.2, the partition
