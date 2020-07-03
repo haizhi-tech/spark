@@ -77,12 +77,14 @@ object EliminateView extends Rule[LogicalPlan] with CastSupport {
       // Map the attributes in the query output to the attributes in the view output by index.
       val newOutput = output.zip(queryOutput).map {
         case (attr, originAttr) if !attr.semanticEquals(originAttr) =>
+          // BDP Fix: do not cast child.output to query Columns type
           // `CheckAnalysis` already guarantees that the cast is a up-cast for sure.
           Alias(cast(originAttr, attr.dataType), attr.name)(exprId = attr.exprId,
             qualifier = attr.qualifier, explicitMetadata = Some(attr.metadata))
         case (_, originAttr) => originAttr
       }
-      Project(newOutput, child)
+      val newChild = Project(newOutput, child)
+      v.copy(output = newChild.output, child = newChild)
 
     // The child should have the same output attributes with the View operator, so we simply
     // remove the View operator.
