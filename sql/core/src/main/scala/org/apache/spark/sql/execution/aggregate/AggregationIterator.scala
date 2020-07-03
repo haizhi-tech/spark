@@ -231,6 +231,7 @@ abstract class AggregationIterator(
             allImperativeAggregateFunctions(i).eval(currentBuffer))
           i += 1
         }
+        resultProjection.initialize(partIndex)
         resultProjection(joinedRow(currentGroupingKey, aggregateResult))
       }
     } else if (modes.contains(Partial) || modes.contains(PartialMerge)) {
@@ -254,6 +255,7 @@ abstract class AggregationIterator(
           typedImperativeAggregates(i).serializeAggregateBufferInPlace(currentBuffer)
           i += 1
         }
+        resultProjection.initialize(partIndex)
         resultProjection(joinedRow(currentGroupingKey, currentBuffer))
       }
     } else {
@@ -261,6 +263,7 @@ abstract class AggregationIterator(
       val resultProjection = UnsafeProjection.create(resultExpressions, groupingAttributes)
       resultProjection.initialize(partIndex)
       (currentGroupingKey: UnsafeRow, currentBuffer: InternalRow) => {
+        resultProjection.initialize(partIndex)
         resultProjection(currentGroupingKey)
       }
     }
