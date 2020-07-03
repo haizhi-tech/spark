@@ -39,7 +39,7 @@ import org.apache.spark.sql.catalyst.parser.{CatalystSqlParser, ParserInterface}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias, View}
 import org.apache.spark.sql.catalyst.util.StringUtils
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
 import org.apache.spark.util.Utils
 
 object SessionCatalog {
@@ -301,6 +301,14 @@ class SessionCatalog(
     val tableIdentifier = TableIdentifier(table, Some(db))
     validateName(table)
 
+    val fixedSchema = StructType(tableDefinition.schema.map { f =>
+      if (f.dataType == DataTypes.NullType) {
+        StructField(f.name, DataTypes.StringType)
+      } else {
+        f
+      }
+    })
+
     val newTableDefinition = if (tableDefinition.storage.locationUri.isDefined
       && !tableDefinition.storage.locationUri.get.isAbsolute) {
       // make the location of the table qualified.
@@ -308,9 +316,10 @@ class SessionCatalog(
         makeQualifiedPath(tableDefinition.storage.locationUri.get)
       tableDefinition.copy(
         storage = tableDefinition.storage.copy(locationUri = Some(qualifiedTableLocation)),
-        identifier = tableIdentifier)
+        identifier = tableIdentifier,
+        schema = fixedSchema)
     } else {
-      tableDefinition.copy(identifier = tableIdentifier)
+      tableDefinition.copy(identifier = tableIdentifier, schema = fixedSchema)
     }
 
     requireDbExists(db)
