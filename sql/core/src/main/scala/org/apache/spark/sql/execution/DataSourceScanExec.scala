@@ -434,7 +434,7 @@ case class FileSourceScanExec(
     val splitFiles = selectedPartitions.flatMap { partition =>
       partition.files.flatMap { file =>
         val blockLocations = getBlockLocations(file)
-        if (fsRelation.fileFormat.isSplitable(
+        if (defaultMaxSplitBytes > 0 && fsRelation.fileFormat.isSplitable(
             fsRelation.sparkSession, fsRelation.options, file.getPath)) {
           (0L until file.getLen by maxSplitBytes).map { offset =>
             val remaining = file.getLen - offset
