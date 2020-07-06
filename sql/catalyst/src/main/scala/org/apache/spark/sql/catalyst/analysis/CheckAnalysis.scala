@@ -202,12 +202,13 @@ trait CheckAnalysis extends PredicateHelper {
                           s"in a sub-query.")
                     case other => // OK
                   }
-
+                  /*
                   if (!child.deterministic) {
                     failAnalysis(
                       s"nondeterministic expression ${expr.sql} should not " +
                         s"appear in the arguments of an aggregate function.")
                   }
+                  */
                 }
               case e: Attribute if groupingExprs.isEmpty =>
                 // Collect all [[AggregateExpressions]]s.
