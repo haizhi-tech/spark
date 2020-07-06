@@ -468,16 +468,23 @@ case class FileSourceScanExec(
       currentSize = 0
     }
 
-    // Assign files to partitions using "Next Fit Decreasing"
-    splitFiles.foreach { file =>
-      if (currentSize + file.length > maxSplitBytes) {
-        closePartition()
+    // BDP: optimize partition table task
+    if (defaultMaxSplitBytes <= 0) {
+      splitFiles.zipWithIndex.foreach { case (file, index) =>
+        partitions += FilePartition(index, Array(file))
       }
-      // Add the given file to the current partition.
-      currentSize += file.length + openCostInBytes
-      currentFiles += file
+    } else {
+      // Assign files to partitions using "First Fit Decreasing" (FFD)
+      splitFiles.foreach { file =>
+        if (currentSize + file.length > maxSplitBytes) {
+          closePartition()
+        }
+        // Add the given file to the current partition.
+        currentSize += file.length + openCostInBytes
+        currentFiles += file
+      }
+      closePartition()
     }
-    closePartition()
 
     new FileScanRDD(fsRelation.sparkSession, readFile, partitions)
   }
