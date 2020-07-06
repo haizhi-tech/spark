@@ -58,7 +58,11 @@ private[kafka010] class KafkaRelation(
     // Each running query should use its own group id. Otherwise, the query may be only assigned
     // partial data since Kafka will assign partitions to multiple consumers having the same group
     // id. Hence, we should generate a unique id for each query.
-    val uniqueGroupId = s"spark-kafka-relation-${UUID.randomUUID}"
+    // bdp modify
+    val uniqueGroupIdSuffix = s"spark-kafka-relation-${UUID.randomUUID}"
+    val uniqueGroupId = sourceOptions.get("groupIdPrefix")
+      .map(prefix => s"${prefix}-${uniqueGroupIdSuffix}")
+      .getOrElse(uniqueGroupIdSuffix)
 
     val kafkaOffsetReader = new KafkaOffsetReader(
       strategy,
