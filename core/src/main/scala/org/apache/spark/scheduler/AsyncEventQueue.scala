@@ -136,13 +136,22 @@ private class AsyncEventQueue(
     }
   }
 
+  // bdp optimize, to avoid lost important event
+  private def offer(event: SparkListenerEvent): Boolean = {
+    if (eventQueue.remainingCapacity() > 1000
+      || event.isInstanceOf[SparkListenerJobEnd]) {
+      return eventQueue.offer(event)
+    }
+    false
+  }
+
   def post(event: SparkListenerEvent): Unit = {
     if (stopped.get()) {
       return
     }
 
     eventCount.incrementAndGet()
-    if (eventQueue.offer(event)) {
+    if (offer(event)) {
       return
     }
 
