@@ -96,21 +96,13 @@ trait Logging {
   }
 
   protected def initializeLogIfNecessary(isInterpreter: Boolean): Unit = {
-    initializeLogIfNecessary(isInterpreter, silent = false)
-  }
-
-  protected def initializeLogIfNecessary(
-      isInterpreter: Boolean,
-      silent: Boolean = false): Boolean = {
     if (!Logging.initialized) {
       Logging.initLock.synchronized {
         if (!Logging.initialized) {
-          initializeLogging(isInterpreter, silent)
-          return true
+          initializeLogging(isInterpreter, false)
         }
       }
     }
-    false
   }
 
   private def initializeLogging(isInterpreter: Boolean, silent: Boolean): Unit = {

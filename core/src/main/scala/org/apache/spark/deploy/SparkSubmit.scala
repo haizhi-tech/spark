@@ -76,14 +76,14 @@ private[spark] class SparkSubmit extends Logging {
   def doSubmit(args: Array[String]): Unit = {
     // Initialize logging if it hasn't been done yet. Keep track of whether logging needs to
     // be reset before the application starts.
-    val uninitLog = initializeLogIfNecessary(true, silent = true)
+    initializeLogIfNecessary(true)
 
     val appArgs = parseArguments(args)
     if (appArgs.verbose) {
       logInfo(appArgs.toString)
     }
     appArgs.action match {
-      case SparkSubmitAction.SUBMIT => submit(appArgs, uninitLog)
+      case SparkSubmitAction.SUBMIT => submit(appArgs, true)
       case SparkSubmitAction.KILL => kill(appArgs)
       case SparkSubmitAction.REQUEST_STATUS => requestStatus(appArgs)
       case SparkSubmitAction.PRINT_VERSION => printVersion()
