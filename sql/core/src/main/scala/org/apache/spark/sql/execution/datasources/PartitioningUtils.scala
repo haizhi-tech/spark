@@ -275,7 +275,8 @@ object PartitioningUtils {
       assert(columnName.nonEmpty, s"Empty partition column name in '$columnSpec'")
 
       val rawColumnValue = columnSpec.drop(equalSignIndex + 1)
-      assert(rawColumnValue.nonEmpty, s"Empty partition column value in '$columnSpec'")
+      // Compatible with partition is empty
+      // assert(rawColumnValue.nonEmpty, s"Empty partition column value in '$columnSpec'")
 
       val literal = if (userSpecifiedDataTypes.contains(columnName)) {
         // SPARK-26188: if user provides corresponding column schema, get the column value without

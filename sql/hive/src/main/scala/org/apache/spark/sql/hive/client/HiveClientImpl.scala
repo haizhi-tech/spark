@@ -569,7 +569,8 @@ private[hive] class HiveClientImpl(
     // do the check at first and collect all the matching partitions
     val matchingParts =
       specs.flatMap { s =>
-        assert(s.values.forall(_.nonEmpty), s"partition spec '$s' is invalid")
+        // Compatible with partition is empty
+        // assert(s.values.forall(_.nonEmpty), s"partition spec '$s' is invalid")
         // The provided spec here can be a partial spec, i.e. it will match all partitions
         // whose specs are supersets of this partial spec. E.g. If a table has partitions
         // (b='1', c='1') and (b='1', c='2'), a partial spec of (b='1') will match both.
