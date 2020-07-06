@@ -20,6 +20,9 @@ package org.apache.spark.sql.execution.datasources.jdbc
 import java.sql.{Connection, DriverManager}
 import java.util.{Locale, Properties}
 
+import org.json4s._
+import org.json4s.jackson.JsonMethods._
+
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 import org.apache.spark.sql.types.StructType
 
@@ -181,6 +184,13 @@ class JDBCOptions(
   // An option to execute custom SQL before fetching data from the remote DB
   val sessionInitStatement = parameters.get(JDBC_SESSION_INIT_STATEMENT)
 
+  // extends for bdp jdbc map
+  val schemaMap = {
+    implicit val formats = DefaultFormats
+    val jsonStr: String = parameters.getOrElse(JDBC_SCHEMA_MAP, "{}")
+    parse(jsonStr).extract[Map[String, String]]
+  }
+
   // An option to allow/disallow pushing down predicate into JDBC data source
   val pushDownPredicate = parameters.getOrElse(JDBC_PUSHDOWN_PREDICATE, "true").toBoolean
 }
@@ -234,5 +244,7 @@ object JDBCOptions {
   val JDBC_BATCH_INSERT_SIZE = newOption("batchsize")
   val JDBC_TXN_ISOLATION_LEVEL = newOption("isolationLevel")
   val JDBC_SESSION_INIT_STATEMENT = newOption("sessionInitStatement")
+  // extends for bdp jdbc map
+  val JDBC_SCHEMA_MAP = newOption("schemaMap")
   val JDBC_PUSHDOWN_PREDICATE = newOption("pushDownPredicate")
 }
