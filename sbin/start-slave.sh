@@ -78,8 +78,10 @@ function start_instance {
   fi
   WEBUI_PORT=$(( $SPARK_WORKER_WEBUI_PORT + $WORKER_NUM - 1 ))
 
+  HOSTNAME=$(ping `hostname` | head -n 1 | awk '{print $2}')
+
   "${SPARK_HOME}/sbin"/spark-daemon.sh start $CLASS $WORKER_NUM \
-     --webui-port "$WEBUI_PORT" $PORT_FLAG $PORT_NUM $MASTER "$@"
+     --webui-port "$WEBUI_PORT" $PORT_FLAG $PORT_NUM $MASTER "$@" -h ${HOSTNAME}
 }
 
 if [ "$SPARK_WORKER_INSTANCES" = "" ]; then
