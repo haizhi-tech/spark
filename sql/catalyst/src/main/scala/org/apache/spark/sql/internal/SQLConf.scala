@@ -1611,6 +1611,23 @@ class SQLConf extends Serializable with Logging {
 
   @transient protected val reader = new ConfigReader(settings)
 
+  @transient private var localProperties: Option[InheritableThreadLocal[Properties]] = None
+
+  def setLocalProperties(localProperties: InheritableThreadLocal[Properties]) {
+    this.localProperties = Some(localProperties)
+  }
+
+  def getBDPConf[T](entry: ConfigEntry[T]): T = {
+    val key = entry.key
+    if (localProperties.isDefined) {
+      val v = Option(localProperties.get.get()).map(_.getProperty(key)).orNull
+      if (v != null) {
+        return entry.valueConverter(v)
+      }
+    }
+    getConf(entry)
+  }
+
   /** ************************ Spark SQL Params/Hints ******************* */
 
   def optimizerExcludedRules: Option[String] = getConf(OPTIMIZER_EXCLUDED_RULES)
@@ -1683,7 +1700,7 @@ class SQLConf extends Serializable with Logging {
 
   def cacheVectorizedReaderEnabled: Boolean = getConf(CACHE_VECTORIZED_READER_ENABLED)
 
-  def numShufflePartitions: Int = getConf(SHUFFLE_PARTITIONS)
+  def numShufflePartitions: Int = getBDPConf(SHUFFLE_PARTITIONS)
 
   def targetPostShuffleInputSize: Long =
     getConf(SHUFFLE_TARGET_POSTSHUFFLE_INPUT_SIZE)
