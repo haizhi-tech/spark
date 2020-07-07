@@ -49,6 +49,9 @@ class CacheManager extends Logging {
   private val cachedData = new java.util.LinkedList[CachedData]
 
   @transient
+  val cacheTables = new java.util.concurrent.ConcurrentHashMap[String, Int]
+
+  @transient
   private val cacheLock = new ReentrantReadWriteLock
 
   /** Acquires a read lock on the cache for the duration of `f`. */
@@ -73,11 +76,18 @@ class CacheManager extends Logging {
   def clearCache(): Unit = writeLock {
     cachedData.asScala.foreach(_.cachedRepresentation.cacheBuilder.clearCache())
     cachedData.clear()
+    cacheTables.clear()
   }
 
   /** Checks if the cache is empty. */
   def isEmpty: Boolean = readLock {
     cachedData.isEmpty
+  }
+
+  // BDP modify
+  /** Checks if the table is cache. */
+  def isCacheTable(tableName: String): Boolean = {
+    !cachedData.isEmpty && cacheTables.containsKey(tableName)
   }
 
   /**
@@ -93,6 +103,9 @@ class CacheManager extends Logging {
     if (lookupCachedData(planToCache).nonEmpty) {
       logWarning("Asked to cache already cached data.")
     } else {
+      if (tableName.isDefined) {
+        cacheTables.put(tableName.get, 1)
+      }
       val sparkSession = query.sparkSession
       val inMemoryRelation = InMemoryRelation(
         sparkSession.sessionState.conf.useCompression,
@@ -141,6 +154,10 @@ class CacheManager extends Logging {
     while (it.hasNext) {
       val cd = it.next()
       if (shouldRemove(cd.plan)) {
+        val tableName = cd.cachedRepresentation.cacheBuilder.tableName
+        if (tableName.isDefined) {
+          cacheTables.remove(tableName.get)
+        }
         cd.cachedRepresentation.cacheBuilder.clearCache(blocking)
         it.remove()
       }

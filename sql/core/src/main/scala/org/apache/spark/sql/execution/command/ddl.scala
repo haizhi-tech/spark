@@ -207,9 +207,12 @@ case class DropTableCommand(
 
     if (isTempView || catalog.tableExists(tableName)) {
       try {
-        sparkSession.sharedState.cacheManager.uncacheQuery(
-          sparkSession.table(tableName), cascade = !isTempView)
+        if (sparkSession.sharedState.cacheManager.isCacheTable(tableName.table)) {
+          sparkSession.sharedState.cacheManager.uncacheQuery(sparkSession.table(tableName)
+            , cascade = true)
+        }
       } catch {
+        case _: NoSuchTableException if ifExists =>
         case NonFatal(e) => log.warn(e.toString, e)
       }
       catalog.refreshTable(tableName)

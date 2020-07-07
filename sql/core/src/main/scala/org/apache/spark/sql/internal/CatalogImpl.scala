@@ -478,25 +478,37 @@ class CatalogImpl(sparkSession: SparkSession) extends Catalog {
    */
   override def refreshTable(tableName: String): Unit = {
     val tableIdent = sparkSession.sessionState.sqlParser.parseTableIdentifier(tableName)
-    val tableMetadata = sessionCatalog.getTempViewOrPermanentTableMetadata(tableIdent)
-    val table = sparkSession.table(tableIdent)
+    //    val tableMetadata = sessionCatalog.getTempViewOrPermanentTableMetadata(tableIdent)
 
-    if (tableMetadata.tableType == CatalogTableType.VIEW) {
-      // Temp or persistent views: refresh (or invalidate) any metadata/data cached
-      // in the plan recursively.
-      table.queryExecution.analyzed.refresh()
-    } else {
-      // Non-temp tables: refresh the metadata cache.
-      sessionCatalog.refreshTable(tableIdent)
-    }
+    //    if (tableMetadata.tableType == CatalogTableType.VIEW) {
+    //      // Temp or persistent views: refresh (or invalidate) any metadata/data cached
+    //      // in the plan recursively.
+    //      table.queryExecution.analyzed.refresh()
+    //    } else {
+    //      // Non-temp tables: refresh the metadata cache.
+    //      sessionCatalog.refreshTable(tableIdent)
+    //    }
+    sessionCatalog.refreshTable(tableIdent)
+
 
     // If this table is cached as an InMemoryRelation, drop the original
     // cached version and make the new version cached lazily.
-    if (isCached(table)) {
-      // Uncache the logicalPlan.
-      sparkSession.sharedState.cacheManager.uncacheQuery(table, cascade = true, blocking = true)
-      // Cache it again.
-      sparkSession.sharedState.cacheManager.cacheQuery(table, Some(tableIdent.table))
+    // val table = sparkSession.table(tableIdent)
+
+    // BDP: optimize, avoid Spark Job, performance improve
+    // http://spark.apache.org/docs/latest/sql-programming-guide.html
+    // #upgrading-from-spark-sql-21-to-22
+    if (sparkSession.sharedState.cacheManager.isCacheTable(tableName)) {
+      val logicalPlan = sparkSession.sessionState.catalog.lookupRelation(tableIdent)
+      val isCached = sparkSession.sharedState.cacheManager.lookupCachedData(logicalPlan).nonEmpty
+      // if (isCached(table)) {
+      if (isCached) {
+        val df = Dataset.ofRows(sparkSession, logicalPlan)
+        // Uncache the logicalPlan.
+        sparkSession.sharedState.cacheManager.uncacheQuery(df, cascade = true, blocking = true)
+        // Cache it again.
+        sparkSession.sharedState.cacheManager.cacheQuery(df, Some(tableIdent.table))
+      }
     }
   }
 

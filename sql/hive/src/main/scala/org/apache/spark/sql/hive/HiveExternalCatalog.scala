@@ -59,6 +59,16 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
   import HiveExternalCatalog._
   import CatalogTableType._
 
+  lazy val clientPool = {
+    var poolSize = conf.getInt("spark.bdp.hive.client.pool.size", 1)
+    if (poolSize < 1 ||  poolSize > 5) {
+      poolSize = 1
+    }
+    for (i <- 0 until poolSize) yield {
+      HiveUtils.newClientForMetadata(conf, hadoopConf)
+    }
+  }
+
   /**
    * A Hive client used to interact with the metastore.
    */
