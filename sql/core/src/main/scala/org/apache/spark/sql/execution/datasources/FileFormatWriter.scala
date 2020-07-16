@@ -97,8 +97,9 @@ object FileFormatWriter extends Logging {
 
     val caseInsensitiveOptions = CaseInsensitiveMap(options)
 
-    val dataSchema = dataColumns.toStructType
-    DataSourceUtils.verifyWriteSchema(fileFormat, dataSchema)
+    // BDP Modify, Parquet data source support null data type.
+    // val dataSchema = dataColumns.toStructType
+    // DataSourceUtils.verifyWriteSchema(fileFormat, dataSchema)
 
     // BDP HACK! change NullType to BooleanType since since parquet does not support NullType
     val nullSafeColumns: Seq[Attribute] =
