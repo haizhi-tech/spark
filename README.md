@@ -1,6 +1,6 @@
 # Haizhi distribution of Apache Spark
 
-This repository, located at <https://github.com/haizhi-tech/spark>, contains a fork of Apache Spark. It includes a number of changes that are not yet on the Apache master branch that are useful at Haizhi.
+This repository, located at <https://github.com/haizhi-tech/spark>, contains a fork of Apache Spark. It includes a number of changes that are not yet on the Apache repository that are useful at Haizhi.
 
 Some highlights include:
 
@@ -9,9 +9,11 @@ Some highlights include:
 - Stability enhancement
 - Lots of bugfixes
 
+Related features are integrated into branches beginning with bdp, such as `bdp-2.4.6`.
+
 (original README below)
 
-=====================
+--------------------
 
 # Apache Spark
 
