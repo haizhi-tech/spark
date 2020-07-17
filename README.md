@@ -1,3 +1,18 @@
+# Haizhi distribution of Apache Spark
+
+This repository, located at <https://github.com/haizhi-tech/spark>, contains a fork of Apache Spark. It includes a number of changes that are not yet on the Apache master branch that are useful at Haizhi.
+
+Some highlights include:
+
+- Support running on Huawei FI bigdata platform
+- Better concurrent query performance
+- Stability enhancement
+- Lots of bugfixes
+
+(original README below)
+
+=====================
+
 # Apache Spark
 
 Spark is a unified analytics engine for large-scale data processing. It provides
