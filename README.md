@@ -4,8 +4,8 @@ This repository, located at <https://github.com/haizhi-tech/spark>, contains a f
 
 Some highlights include:
 
-- Support running on Huawei FI bigdata platform
 - Better concurrent query performance
+- Support Huawei FI bigdata platform
 - Stability enhancement
 - Lots of bugfixes
 
